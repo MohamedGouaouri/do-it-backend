@@ -55,7 +55,7 @@ router.post("/register", async (req, res) => {
         password: hashPassowrd
       })
       res.json({
-        status: "success",
+        status: "ok",
         message: "User created"
       })
     } catch (e) {
@@ -129,7 +129,7 @@ router.post("/login", async (req, res) => {
 
     // 3. Send token
     return res.json({
-      status: "success",
+      status: "ok",
       token
     })
   } else {
@@ -138,11 +138,6 @@ router.post("/login", async (req, res) => {
       message: "validation error"
     })
   }
-})
-
-
-router.get("/test", authorize([roles.User, roles.Admin]), (req, res) => {
-  res.json("allowed!!")
 })
 
 

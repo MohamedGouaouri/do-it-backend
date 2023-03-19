@@ -1,8 +1,6 @@
 const jwt = require("jsonwebtoken")
 
 const roles = {
-    Admin: 'admin',
-    Manager: 'manager',
     User: 'user',
 }
 

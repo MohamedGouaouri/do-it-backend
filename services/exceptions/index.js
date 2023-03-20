@@ -9,7 +9,6 @@ class TodoExistsException extends Error {
     }
 }
 
-
 module.exports = {
-    TodoExistsException
+    TodoExistsException,
 }

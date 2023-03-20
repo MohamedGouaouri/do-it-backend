@@ -31,7 +31,7 @@ const createTodo = async ({
     tasks
 }) => {
     if (await userHasTodo(userId, title)) {
-        throw TodoExistsException(`User has already created that todo ${title}`)
+        throw new TodoExistsException(`User has already created that todo ${title}`)
     }
     return await TodoModel.create({
         title: title,
@@ -42,8 +42,104 @@ const createTodo = async ({
     })
 }
 
+const deleteTodo = async ({
+    userId,
+    todoId
+}) => {
+    console.log(userId, todoId)
+    const { deletedCount } = await TodoModel.deleteOne({
+        createdBy: userId,
+        todo_id: todoId
+    })
+
+    return deletedCount
+}
+
+const addTask = async ({
+    userId,
+    todoId,
+    title,
+    description,
+    endDate
+}) => {
+    // Search for the todo
+    const todo = await TodoModel.findOne({
+        createdBy: userId,
+        todo_id: todoId
+    })
+
+    if (todo) {
+
+        const task = { title, description, endDate }
+        const tasks = todo.tasks
+        tasks.push(task)
+        return await TodoModel.updateOne({
+            createdBy: userId,
+            todo_id: todoId
+        }, {
+            tasks: tasks
+        })
+    }
+}
+
+
+const deleteTask = async ({
+    userId,
+    todoId,
+    taskId,
+}) => {
+    // Find the todo
+    const todo = await TodoModel.findOne({
+        createdBy: userId,
+        todo_id: todoId
+    })
+    if (todo) {
+        // Search for task and delete it
+        const tasks = todo.tasks
+        if (tasks.length == 0) return
+        const filteredTasks = tasks.filter((task) => {
+            return task.task_id != taskId
+        })
+
+        return await TodoModel.updateOne({
+            createdBy: userId,
+            todo_id: todoId
+        }, {
+            tasks: filteredTasks
+        })
+
+    }
+    else {
+        return
+    }
+}
+
+
+const toggleTodo = async ({
+    userId,
+    todoId
+}) => {
+    /*
+    If I toggle the todo, do all tasks get toggled as well?
+    */
+
+    const todo = await TodoModel.findOne({
+        createdBy: userId,
+        todo_id: todoId
+    })
+    if (todo) {
+        // Toggle completed
+        todo.completed = !todo.completed
+        return await todo.save()
+    }
+    return
+}
 
 module.exports = {
     getAllTodos,
-    createTodo
+    createTodo,
+    deleteTodo,
+    addTask,
+    deleteTask,
+    toggleTodo
 }

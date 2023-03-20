@@ -3,7 +3,7 @@ var router = express.Router();
 const Joi = require("joi");
 const { authorize } = require('../../middlewares/authorize');
 const { TodoExistsException } = require('../../services/exceptions');
-const { createTodo, getAllTodos, deleteTodo, deleteTask, addTask, toggleTodo } = require('../../services/todos/todosService');
+const { createTodo, getAllTodos, deleteTodo, deleteTask, addTask, toggleTodo, toggleTask } = require('../../services/todos/todosService');
 
 router.get("/", authorize(), async (req, res) => {
     const userId = req.user.id
@@ -202,7 +202,7 @@ router.patch("/toggle", authorize(), async (req, res) => {
 
         await toggleTodo({
             userId,
-            todoId
+            todoId,
         })
         return res.json({
             status: 'ok',
@@ -217,8 +217,38 @@ router.patch("/toggle", authorize(), async (req, res) => {
     }
 })
 
-router.patch("/toggle/task", () => {
+router.patch("/toggle/task", authorize(), async (req, res) => {
+    const data = req.body
+    const validator = Joi.object({
+        todo_id: Joi.string().required(),
+        task_id: Joi.string().required(),
 
+    })
+
+    const validationResult = validator.validate(data)
+    const {
+        todo_id: todoId,
+        task_id: taskId
+    } = data
+    const userId = req.user.id
+    if (!validationResult.error) {
+
+        await toggleTask({
+            userId,
+            todoId,
+            taskId
+        })
+        return res.json({
+            status: 'ok',
+            message: 'Task toggled'
+        })
+
+    } else {
+        return res.status(401).json({
+            status: "error",
+            message: "Validation error"
+        })
+    }
 })
 
 

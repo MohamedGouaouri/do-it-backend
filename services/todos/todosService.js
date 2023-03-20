@@ -135,11 +135,41 @@ const toggleTodo = async ({
     return
 }
 
+const toggleTask = async ({
+    userId,
+    todoId,
+    taskId
+}) => {
+    // Search for task 
+    const todo = await TodoModel.findOne({
+        "createdBy": userId,
+        "todo_id": todoId,
+    })
+
+    if (todo) {
+        console.log(todo.title)
+        const task = todo.tasks.filter(task => task.task_id == taskId)
+        if (task.length > 0) {
+            return await TodoModel.findOneAndUpdate({
+                "createdBy": userId,
+                "todo_id": todoId,
+                'tasks.task_id': taskId
+            }, {
+                '$set': {
+                    'tasks.$.completed': !task[0].completed
+                }
+            })
+        }
+    }
+
+}
+
 module.exports = {
     getAllTodos,
     createTodo,
     deleteTodo,
     addTask,
     deleteTask,
-    toggleTodo
+    toggleTodo,
+    toggleTask
 }

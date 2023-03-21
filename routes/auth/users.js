@@ -27,7 +27,7 @@ const { roles } = require("../../middlewares/authorize")
  *                  required:
  *                      - email
  *                      - password
- *    reponses:
+ *    responses:
  *      201:
  *        description: User created
  *      401:
@@ -90,15 +90,51 @@ router.post("/register", async (req, res) => {
  *                  required:
  *                      - email
  *                      - password
- *    reponses:
+ *    responses:
  *      200:
- *        description: Successfull login
- *      404:
- *        description: User not found error
+ *        description: User logged in successfully
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                status:
+ *                  type: string
+ *                token:
+ *                  type: string
  *      403:
- *        description: Password is incorrect
-*       401:
- *        description: Validation error
+ *        description: Incorrect password
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                status:
+ *                  type: string
+ *                message:
+ *                  type: string
+ *      404:
+ *        description: User not found
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                status:
+ *                  type: string
+ *                message:
+ *                  type: string
+ *      500:
+ *        description: Couldn't create the user
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                status:
+ *                  type: string
+ *                message:
+ *                  type: string
  */
 
 router.post("/login", async (req, res) => {

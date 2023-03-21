@@ -22,7 +22,7 @@ const Task = mongoose.Schema({
         required: false,
         default: false
     }
-})
+},)
 
 
 const Todo = mongoose.Schema({
@@ -62,7 +62,8 @@ const Todo = mongoose.Schema({
 
     }
 }, {
-    collection: "todos"
+    collection: "todos",
+    versionKey: false
 })
 
 

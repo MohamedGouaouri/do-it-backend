@@ -22,7 +22,7 @@ const options = {
       version: '1.0.0',
     },
   },
-  apis: ['./routes/**/*.js'], // files containing annotations as above
+  apis: ['./routes/auth/*.js', './routes/todos/*.js'], // files containing annotations as above
 };
 
 const swaggerDocs = swaggerJsDoc(options);

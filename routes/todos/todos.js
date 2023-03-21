@@ -5,22 +5,66 @@ const { authorize } = require('../../middlewares/authorize');
 const { TodoExistsException } = require('../../services/exceptions');
 const { createTodo, getAllTodos, deleteTodo, deleteTask, addTask, toggleTodo, toggleTask } = require('../../services/todos/todosService');
 
+
+/**
+ * @swagger
+ *  /todos:
+ *    get:
+ *      description: Get todos for the logged in user
+ *      responses:
+ *        200:
+ *          description: Success
+ *        500:
+ *          description: Failure
+ */
 router.get("/", authorize(), async (req, res) => {
     const userId = req.user.id
     try {
-        const todos = await getAllTodos(userId)
+        const response = await getAllTodos(userId)
         return res.json({
             status: 'ok',
-            data: todos
+            data: response.data,
+            message: response.message
         })
     } catch (e) {
         return res.status(500).json({
             status: 'error',
-            message: 'Could not fetch todos'
+            message: e.message
         })
     }
 })
 
+/**
+ * @swagger
+ *  /todos/create:
+ *    post:
+ *      description: Create a todo item for the logged in user
+ *      requestBody:
+ *        required: true
+ *        content:
+ *          application/json:
+ *              schema:
+ *                  type: object
+ *                  properties:
+ *                      title:
+ *                          type: string
+ *                      description:
+ *                          type: string
+ *                      endDate:
+ *                          type: string
+ *                      tasks:
+ *                          type: array
+ *                  required:
+ *                      - title
+ *                      
+ *      responses:
+ *        201:
+ *          description: Todo item created successfully 
+ *        401:
+ *          description: Todo item creation failure due to validation error
+ *        500:
+ *          description: Todo item creation failure due to service error
+ */
 router.post("/create", authorize(), async (req, res) => {
     const data = req.body
     const taskSchema = Joi.object({
@@ -40,29 +84,21 @@ router.post("/create", authorize(), async (req, res) => {
     if (!validationResult.error) {
         // Request service to create the todo
         try {
-            await createTodo({
+            const response = await createTodo({
                 userId,
                 ...data
             })
             return res.status(201).json({
                 status: 'ok',
-                message: 'Todo created successfully'
+                message: response.message
             })
         }
         catch (e) {
-            console.error(e)
-
-            if (e instanceof TodoExistsException) {
-                return res.status(500).json({
-                    status: 'error',
-                    message: e.message
-                })
-            } else {
-                return res.status(500).json({
-                    status: 'error',
-                    message: 'Could not create the todo'
-                })
-            }
+            console.log(e)
+            return res.status(500).json({
+                status: 'error',
+                message: e.message
+            })
 
         }
     }
@@ -74,7 +110,31 @@ router.post("/create", authorize(), async (req, res) => {
     }
 })
 
-
+/**
+ * @swagger
+ *  /todos/delete:
+ *    delete:
+ *      description: Delete a todo item for the logged in user
+ *      requestBody:
+ *        required: true
+ *        content:
+ *          application/json:
+ *              schema:
+ *                  type: object
+ *                  properties:
+ *                      todo_id:
+ *                          type: string
+ *                  required:
+ *                      - todo_id
+ *                      
+ *      responses:
+ *        200:
+ *          description: Todo item deleted successfully 
+ *        401:
+ *          description: Todo item deletion failure due to validation error
+ *        500:
+ *          description: Todo item deletion failure due to service error
+ */
 router.delete("/delete", authorize(), async (req, res) => {
     const data = req.body
     const validator = Joi.object({
@@ -86,31 +146,72 @@ router.delete("/delete", authorize(), async (req, res) => {
     const userId = req.user.id
     if (!validationResult.error) {
         // Call service to delete
-        const deletedCount = await deleteTodo({
-            userId,
-            todoId
-        })
-        if (deletedCount == 1) {
+        try {
+
+            const response = await deleteTodo({
+                userId,
+                todoId
+            })
+
             return res.json({
                 status: "ok",
-                message: "Todo deleted successfully"
+                message: response.message,
+                data: response.data
+            })
+
+
+
+        } catch (e) {
+            return res.status(500).json({
+                status: "error",
+                message: e.message,
+                data: null
             })
         }
-        return res.status(500).json({
-            status: "error",
-            message: `Todo of id ${todoId} cannot be deleted for that user`
-        })
+
     } else {
         return res.status(401).json({
             status: "error",
-            message: "Validation error"
+            message: "Validation error",
+            data: null
         })
     }
 
 })
 
 
-// Create a task for the todo
+/**
+ * @swagger
+ *  /todos/create/task:
+ *    patch:
+ *      description: Create a todo task for the logged in user for a specific todo item
+ *      requestBody:
+ *        required: true
+ *        content:
+ *          application/json:
+ *              schema:
+ *                  type: object
+ *                  properties:
+ *                      todo_id:
+ *                          type: string
+ *                      title:
+ *                          type: string
+ *                      description:
+ *                          type: string
+ *                      endDate:
+ *                          type: string
+ *                  required:
+ *                      - todo_id
+ *                      - title
+ *                      
+ *      responses:
+ *        201:
+ *          description: Task created successfully 
+ *        401:
+ *          description: Task creation failure due to validation error
+ *        500:
+ *          description: Task creation failure due to service error
+ */
 router.patch("/create/task", authorize(), async (req, res) => {
     const data = req.body
     const validator = Joi.object({
@@ -130,26 +231,66 @@ router.patch("/create/task", authorize(), async (req, res) => {
     const userId = req.user.id
     if (!validationResult.error) {
         // Request service to create the a task for the todo
-        await addTask({
-            userId,
-            todoId,
-            title,
-            description,
-            endDate
-        })
-        return res.json({
-            status: 'ok',
-            message: `Task added successfully to the todo`
-        })
+        try {
+            const response = await addTask({
+                userId,
+                todoId,
+                title,
+                description,
+                endDate
+            })
+            return res.json({
+                status: 'ok',
+                message: response.message,
+                data: response.data
+            })
+        } catch (e) {
+
+            return res.status(500).json({
+                status: 'error',
+                message: e.message,
+                data: null
+            })
+        }
     }
     else {
         return res.status(401).json({
             status: "error",
-            message: "Validation error"
+            message: "Validation error",
+            data: null
         })
     }
 })
 
+
+/**
+ * @swagger
+ *  /todos/delete/task:
+ *    delete:
+ *      description: Delete a todo task for the logged in user for a specific todo item
+ *      requestBody:
+ *        required: true
+ *        content:
+ *          application/json:
+ *              schema:
+ *                  type: object
+ *                  properties:
+ *                      todo_id:
+ *                          type: string
+ *                      task_id:
+ *                          type: string
+ *                  required:
+ *                      - todo_id
+ *                      - task_id
+ *                      
+ *      responses:
+ *        201:
+ *          description: Task deleted successfully 
+ *        401:
+ *          description: Task deletion failure due to validation error
+ *        500:
+ *          description: Task deletion failure due to service error
+ */
 router.delete("/delete/task", authorize(), async (req, res) => {
     const data = req.body
     const validator = Joi.object({
@@ -165,19 +306,30 @@ router.delete("/delete/task", authorize(), async (req, res) => {
     const userId = req.user.id
     if (!validationResult.error) {
         // Call service to delete
-        await deleteTask({
-            userId,
-            todoId,
-            taskId,
-        })
-        return res.json({
-            status: 'ok',
-            message: `Task of id ${taskId} deleted successfully`
-        })
+        try {
+            const response = await deleteTask({
+                userId,
+                todoId,
+                taskId,
+            })
+            return res.json({
+                status: 'ok',
+                message: response.message,
+                data: response.data
+            })
+        } catch (e) {
+
+            return res.status(500).json({
+                status: 'error',
+                message: e.message,
+                data: null
+            })
+        }
     } else {
         return res.status(401).json({
             status: "error",
-            message: "Validation error"
+            message: "Validation error",
+            data: null
         })
     }
 })
@@ -187,6 +339,32 @@ router.patch("/update", () => {
 
 })
 
+
+/**
+ * @swagger
+ *  /todos/toggle:
+ *    patch:
+ *      description: Toggles a todo item completion for the current logged in user
+ *      requestBody:
+ *        required: true
+ *        content:
+ *          application/json:
+ *              schema:
+ *                  type: object
+ *                  properties:
+ *                      todo_id:
+ *                          type: string
+ *                  required:
+ *                      - todo_id
+ *                      
+ *      responses:
+ *        200:
+ *          description: Todo item toggle completion was successful
+ *        401:
+ *          description: Todo item toggle completion failure due to validation error
+ *        500:
+ *          description: Todo item toggle completion failure due to service error
+ */
 router.patch("/toggle", authorize(), async (req, res) => {
     const data = req.body
     const validator = Joi.object({
@@ -200,29 +378,68 @@ router.patch("/toggle", authorize(), async (req, res) => {
     const userId = req.user.id
     if (!validationResult.error) {
 
-        await toggleTodo({
-            userId,
-            todoId,
-        })
-        return res.json({
-            status: 'ok',
-            message: 'Todo toggled'
-        })
+        try {
+            const response = await toggleTodo({
+                userId,
+                todoId,
+            })
+            return res.json({
+                status: 'ok',
+                message: response.message,
+                data: response.data
+            })
+        } catch (e) {
+            return res.status(500).json({
+                status: 'ok',
+                message: e.message,
+                data: null
+            })
+        }
+
 
     } else {
         return res.status(401).json({
             status: "error",
-            message: "Validation error"
+            message: "Validation error",
+            data: null
         })
     }
 })
 
+
+/**
+ * @swagger
+ *  /todos/toggle/task:
+ *    patch:
+ *      description: Toggles a task completion for the current logged in user and for a specific todo item
+ *      requestBody:
+ *        required: true
+ *        content:
+ *          application/json:
+ *              schema:
+ *                  type: object
+ *                  properties:
+ *                      todo_id:
+ *                          type: string
+ *                      task_id:
+ *                          type: string
+ *                  required:
+ *                      - todo_id
+ *                      - task_id
+ *                      
+ *      responses:
+ *        200:
+ *          description: Task toggle completion was successful
+ *        401:
+ *          description: Task toggle completion failure due to validation error
+ *        500:
+ *          description: Task toggle completion failure due to service error
+ */
 router.patch("/toggle/task", authorize(), async (req, res) => {
     const data = req.body
     const validator = Joi.object({
         todo_id: Joi.string().required(),
         task_id: Joi.string().required(),
-
     })
 
     const validationResult = validator.validate(data)
@@ -233,20 +450,31 @@ router.patch("/toggle/task", authorize(), async (req, res) => {
     const userId = req.user.id
     if (!validationResult.error) {
 
-        await toggleTask({
-            userId,
-            todoId,
-            taskId
-        })
-        return res.json({
-            status: 'ok',
-            message: 'Task toggled'
-        })
+        try {
+            const response = await toggleTask({
+                userId,
+                todoId,
+                taskId
+            })
+            return res.json({
+                status: 'ok',
+                message: response.message,
+                data: response.data
+            })
+        } catch (e) {
+            return res.status(500).json({
+                status: 'ok',
+                message: e.message,
+                data: null
+            })
+        }
+
 
     } else {
         return res.status(401).json({
             status: "error",
-            message: "Validation error"
+            message: "Validation error",
+            data: null
         })
     }
 })

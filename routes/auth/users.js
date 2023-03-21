@@ -24,7 +24,7 @@ router.get('/', async (req, res, next) => {
 
 /**
  * @swagger
- * /users/regiser:
+ * /users/register:
  *  post:
  *    desription: registers a new user to codeground
  *    reponses:

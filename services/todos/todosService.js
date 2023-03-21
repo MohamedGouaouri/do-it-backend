@@ -231,6 +231,23 @@ const toggleTask = async ({
 
 }
 
+
+const getAllNonCompletedTodos = async (userId) => {
+    try {
+        const todos = await TodoModel.find({
+            createdBy: userId,
+            completed: false
+        }, { _id: 0, 'tasks._id': 0 }) // Exclude _id from response
+
+        return new TodoServiceResponse(
+            todos,
+            "Todos fetched successfully"
+        )
+    } catch (e) {
+        throw new Error("Could not fetch todos for that user")
+    }
+}
+
 module.exports = {
     getAllTodos,
     createTodo,
@@ -238,5 +255,6 @@ module.exports = {
     addTask,
     deleteTask,
     toggleTodo,
-    toggleTask
+    toggleTask,
+    getAllNonCompletedTodos
 }

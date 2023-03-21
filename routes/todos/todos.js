@@ -243,7 +243,7 @@ router.patch("/create/task", authorize(), async (req, res) => {
     })
 
     const validationResult = validator.validate(data)
-    const {
+    let {
         todo_id: todoId,
         title,
         description,
@@ -253,6 +253,13 @@ router.patch("/create/task", authorize(), async (req, res) => {
     if (!validationResult.error) {
         // Request service to create the a task for the todo
         try {
+
+            if (endDate) {
+                endDate = new Date(endDate).toISOString()
+            } else {
+                endDate = toISOStringLocal(new Date())
+            }
+
             const response = await addTask({
                 userId,
                 todoId,

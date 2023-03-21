@@ -56,7 +56,6 @@ const createTodo = async ({
             "Todo created successfully"
         )
     } catch (e) {
-        console.log(e)
         throw new Error("Could not create the todo")
     }
 }
@@ -201,7 +200,6 @@ const toggleTask = async ({
     })
 
     if (todo) {
-        console.log(todo.title)
         const task = todo.tasks.filter(task => task.task_id == taskId)
         if (task.length > 0) {
             try {

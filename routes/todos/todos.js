@@ -2,7 +2,6 @@ var express = require('express');
 var router = express.Router();
 const Joi = require("joi");
 const { authorize } = require('../../middlewares/authorize');
-const { TodoExistsException } = require('../../services/exceptions');
 const { createTodo, getAllTodos, deleteTodo, deleteTask, addTask, toggleTodo, toggleTask } = require('../../services/todos/todosService');
 const { toISOStringLocal } = require('../utils/utils');
 
@@ -90,16 +89,16 @@ router.post("/create", authorize(), async (req, res) => {
                 tasks
             } = data
             if (endDate) {
-                endDate = new Date(endDate).toISOString()
+                endDate = new Date(endDate).toLocaleDateString()
             } else {
-                endDate = toISOStringLocal(new Date())
+                endDate = new Date().toLocaleDateString()
             }
             if (tasks) {
                 for (let task of tasks) {
                     if (task.endDate) {
-                        task.endDate = new Date(task.endDate).toISOString()
+                        task.endDate = new Date(task.endDate).toLocaleDateString()
                     } else {
-                        task.endDate = toISOStringLocal(new Date())
+                        task.endDate = new Date().toLocaleDateString()
                     }
                 }
             }
@@ -255,9 +254,9 @@ router.patch("/create/task", authorize(), async (req, res) => {
         try {
 
             if (endDate) {
-                endDate = new Date(endDate).toISOString()
+                endDate = new Date(endDate).toLocaleDateString()
             } else {
-                endDate = toISOStringLocal(new Date())
+                endDate = new Date().toLocaleDateString()
             }
 
             const response = await addTask({

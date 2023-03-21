@@ -21,7 +21,11 @@ const Task = mongoose.Schema({
         type: Boolean,
         required: false,
         default: false
-    }
+    },
+    endDate: {
+        type: String,
+        required: false
+    },
 },)
 
 
@@ -46,7 +50,7 @@ const Todo = mongoose.Schema({
         default: false,
     },
     endDate: {
-        type: Date,
+        type: String,
         required: false
     },
 

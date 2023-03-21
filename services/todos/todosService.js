@@ -232,11 +232,12 @@ const toggleTask = async ({
 }
 
 
-const getAllNonCompletedTodos = async (userId) => {
+const getAllNonCompletedTodos = async (userId, endDate) => {
     try {
         const todos = await TodoModel.find({
             createdBy: userId,
-            completed: false
+            completed: false,
+            endDate: endDate
         }, { _id: 0, 'tasks._id': 0 }) // Exclude _id from response
 
         return new TodoServiceResponse(

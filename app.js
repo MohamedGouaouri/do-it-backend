@@ -9,6 +9,7 @@ const swaggerUI = require("swagger-ui-express");
 // const { startHeartBeating } = require("./discovery/discovery")
 
 var indexRouter = require('./routes/index');
+const { registerMailingSchedular } = require('./services/scheduler/schedular');
 
 
 var app = express();
@@ -44,6 +45,9 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 app.use('/', indexRouter);
+
+// Register schedular
+registerMailingSchedular()
 
 //startHeartBeating()
 

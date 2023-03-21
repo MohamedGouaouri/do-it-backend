@@ -9,22 +9,29 @@ const authorize = (roles = []) => {
     if (typeof roles === 'string') {
         roles = [roles];
     }
+    let callNext = true
     return (req, res, next) => {
         const authHeaders = req.headers["authorization"]
         const token = authHeaders && authHeaders.split(" ")[1]
         if (token == null) return res.sendStatus(401) // Unauthorized
         jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-            console.log(user)
-            if (err) return res.sendStatus(403)
+            if (err) {
+                callNext = false
+                return res.status(403).json({
+                    status: 'error',
+                    message: 'Access denied due to authorization failure'
+                })
+            }
             req.user = user
         })
-        console.log(req.user.role);
         if (roles.length && !roles.includes(req.user.role)) {
+            callNext = false
             return res.status(401).json({
+                status: 'error',
                 message: 'Unauthorized role'
             })
         }
-        next();
+        if (callNext) next();
     };
 }
 

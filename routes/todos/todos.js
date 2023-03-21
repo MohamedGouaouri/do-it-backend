@@ -4,6 +4,7 @@ const Joi = require("joi");
 const { authorize } = require('../../middlewares/authorize');
 const { TodoExistsException } = require('../../services/exceptions');
 const { createTodo, getAllTodos, deleteTodo, deleteTask, addTask, toggleTodo, toggleTask } = require('../../services/todos/todosService');
+const { toISOStringLocal } = require('../utils/utils');
 
 
 /**
@@ -84,9 +85,29 @@ router.post("/create", authorize(), async (req, res) => {
     if (!validationResult.error) {
         // Request service to create the todo
         try {
+            let {
+                endDate,
+                tasks
+            } = data
+            if (endDate) {
+                endDate = new Date(endDate).toISOString()
+            } else {
+                endDate = toISOStringLocal(new Date())
+            }
+            if (tasks) {
+                for (let task of tasks) {
+                    if (task.endDate) {
+                        task.endDate = new Date(task.endDate).toISOString()
+                    } else {
+                        task.endDate = toISOStringLocal(new Date())
+                    }
+                }
+            }
             const response = await createTodo({
                 userId,
-                ...data
+                ...data,
+                endDate,
+                tasks
             })
             return res.status(201).json({
                 status: 'ok',

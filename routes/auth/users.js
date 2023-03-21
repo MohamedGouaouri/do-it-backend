@@ -5,30 +5,30 @@ const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
 const User = require("../../models/user")
 
-const { authorize, roles } = require("../../middlewares/authorize")
+const { roles } = require("../../middlewares/authorize")
 
-/**
- * @swagger
- *  /users:
- *    get:
- *      description: Get all users
- *      responses:
- *        200:
- *          description: Success
- */
-router.get('/', async (req, res, next) => {
-  res.json({
-    users: await User.find({})
-  })
-});
 
 /**
  * @swagger
  * /users/register:
  *  post:
- *    desription: registers a new user to codeground
+ *    desription: registers a new user
+ *    requestBody:
+ *        required: true
+ *        content:
+ *          application/json:
+ *              schema:
+ *                  type: object
+ *                  properties:
+ *                      email:
+ *                          type: string
+ *                      password:
+ *                          type: string
+ *                  required:
+ *                      - email
+ *                      - password
  *    reponses:
- *      200:
+ *      201:
  *        description: User created
  *      401:
  *        description: validation error
@@ -38,28 +38,25 @@ router.get('/', async (req, res, next) => {
 router.post("/register", async (req, res) => {
   const data = req.body
   const validator = Joi.object({
-    username: Joi.string().required(),
     email: Joi.string().email().required(),
     password: Joi.string().required()
   })
 
   const validationResult = validator.validate(data)
   if (!validationResult.error) {
-    const { username, email, password } = req.body
+    const { email, password } = req.body
     const salt = await bcrypt.genSalt(parseInt(process.env.ROUNDS));
     const hashPassowrd = await bcrypt.hash(password, salt)
     try {
       await User.create({
-        username: username,
         email: email,
         password: hashPassowrd
       })
-      res.json({
+      res.status(201).json({
         status: "ok",
         message: "User created"
       })
     } catch (e) {
-      console.error(e)
       res.status(500).json({
         status: "error",
         message: "Couldn't create the user"
@@ -78,41 +75,55 @@ router.post("/register", async (req, res) => {
  * @swagger
  * /users/login:
  *  post:
- *    desription: Login to codeground
+ *    desription: Login user
+ *    requestBody:
+ *        required: true
+ *        content:
+ *          application/json:
+ *              schema:
+ *                  type: object
+ *                  properties:
+ *                      email:
+ *                          type: string
+ *                      password:
+ *                          type: string
+ *                  required:
+ *                      - email
+ *                      - password
  *    reponses:
  *      200:
- *        description: success
+ *        description: Successfull login
  *      404:
- *        description: No user of username was found
- *      401:
+ *        description: User not found error
+ *      403:
  *        description: Password is incorrect
+*       401:
+ *        description: Validation error
  */
 
 router.post("/login", async (req, res) => {
   const data = req.body
   const validator = Joi.object({
-    username: Joi.string().required(),
+    email: Joi.string().required(),
     password: Joi.string().required()
   })
 
   const validationResult = validator.validate(data)
   if (!validationResult.error) {
-    const { username, password } = req.body
-    const user = await User.findOne({ username: username }).exec()
+    const { email, password } = req.body
+    const user = await User.findOne({ email: email }).exec()
     if (!user) {
       return res.status(404).json({
         status: "error",
-        message: `No user of username ${username} was found`
+        message: `No user of email ${email} was found`
       })
 
     }
 
-    // user found
-    // 1. Compare password
-    console.log(user)
+    // 1. compare hashes
     const passwordDoesMatch = await bcrypt.compare(password, user.password)
     if (!passwordDoesMatch) {
-      return res.status(401).json({
+      return res.status(403).json({
         status: "error",
         message: "Password is incorrect"
       })
@@ -121,10 +132,10 @@ router.post("/login", async (req, res) => {
     // 2. Generate toke with role
     const token = jwt.sign({
       id: user._id,
-      username: username,
+      email: email,
       role: roles.User
     }, process.env.JWT_SECRET, {
-      expiresIn: 36000
+      expiresIn: 360000
     })
 
     // 3. Send token
